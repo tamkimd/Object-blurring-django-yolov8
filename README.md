@@ -16,7 +16,7 @@ The following are required to run this project:
 
 ## Installation
 
-1. Clone this repository to your local machine:
+1. Clone this repository to your local machine and add [this model](https://www.dropbox.com/s/f8un8g8h28pqaic/best.pt?dl=0) to /model/ :
 
 <pre><code class="cmd"> git clone https://github.com/tamkimd/object-blurring-django-yolov8.git</pre></code>
 
