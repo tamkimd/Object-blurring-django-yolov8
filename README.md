@@ -45,4 +45,4 @@ The following are required to run this project:
  Video :  [face blur](face_blur.mp4)
 
 ## Reference
-* [YOLOv5](https://github.com/ultralytics/ultralytics)
+* [YOLOv8](https://github.com/ultralytics/ultralytics)
