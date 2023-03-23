@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Object Detection Video Processing</title>
+  <style>
+    body {
+      background-color: #ffffff;
+
+    }
+
+    .upload-form {
+      background-color: rgba(235, 235, 235, 0.9);
+      border-radius: 10px;
+      max-width: 800px;
+      max-height: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      line-height: 1.3;
+      text-align: center;
+    }
+
+
+    .upload-form video {
+
+      max-width: 600px;
+      max-height: 500px;
+      border-radius: 3%;
+    }
+
+    #result {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    #result.hidden {
+      display: none;
+    }
+
+
+    #download-button {
+      margin-top: 10px;
+      background-color: #4299e1;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      font-weight: 600;
+      transition: background-color 0.2s ease-in-out;
+      margin-bottom: 10px;
+
+
+    }
+
+    h1 {
+      background-image: linear-gradient(to top, #883e82 0%, #964747 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+      font-size: 3rem;
+      font-weight: bold;
+    }
+
+    .button {
+      background-color: #4299e1;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      font-weight: 600;
+      transition: background-color 0.2s ease-in-out;
+      margin-bottom: 10px;
+
+    }
+
+
+    .button:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+    }
+
+
+    .checkbox-label {
+      font-size: 1.3em;
+      display: block;
+      margin-bottom: 15px;
+      margin-right: 10px;
+    }
+
+    .checkbox-label-row {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .processing {
+      background-color: grey;
+      color: white;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Object Detection Video Processing</h1>
+
+
+  <div class="upload-form">
+    <form id="upload-form" enctype="multipart/form-data">
+      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+      <label class="checkbox-label" for="video-input">
+        Select MP4 video:
+        <input type="file" name="video" id="video-input" class="hidden">
+      </label>
+      <div style="font-size: medium;" id="video-info"></div>
+
+
+      <div>
+        <div class="checkbox-label-row">
+          <label class="checkbox-label">
+            <input type="checkbox" name="labels[]" value="face" />
+            <span>Face</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" name="labels[]" value="plate" />
+            <span>Plate</span>
+          </label>
+        </div>
+
+      </div>
+      <button type="submit" id="process-button" class="button ">
+        Process Video
+      </button>
+      <div id="result" class="hidden">
+        <div class="loader hidden">
+          <i class="fas fa-spinner fa-pulse"></i>
+        </div>
+        <video id="video-player" controls></video>
+
+
+      </div>
+
+    </form>
+</body>
+<script>const form = document.querySelector('#upload-form');
+  const videoInput = document.querySelector('#video-input');
+  const result = document.querySelector('#result');
+  const video = document.querySelector('#result video');
+  const labelsCheckboxes = document.querySelectorAll('input[name="labels[]"]');
+  const videoInfo = document.querySelector('#video-info');
+  const button = document.querySelector('#process-button');
+
+  videoInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    const fileSizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+    const video = document.createElement('video');
+    const objectURL = URL.createObjectURL(file);
+    video.src = objectURL;
+
+    video.addEventListener('loadedmetadata', () => {
+      const durationInSeconds = Math.floor(video.duration);
+      const durationInMinutes = Math.floor(durationInSeconds / 60);
+      const durationSeconds = durationInSeconds - (durationInMinutes * 60);
+      videoInfo.textContent = `Selected file: ${file.name}, duration: ${durationInMinutes}m${durationSeconds}s, size: ${fileSizeInMB} MB`;
+      URL.revokeObjectURL(objectURL);
+    });
+  });
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+
+    const selectedLabels = Array.from(labelsCheckboxes).filter(checkbox => checkbox.checked);
+    if (selectedLabels.length === 0) {
+      alert('Vui lòng chọn ít nhất một nhãn.');
+      return;
+    }
+    button.disabled = true;
+    button.classList.add('processing');
+    const loader = document.querySelector('#result .loader');
+    loader.classList.remove('hidden');
+    const formData = new FormData();
+    formData.append('video', videoInput.files[0]);
+    const labels = selectedLabels.map(checkbox => checkbox.value);
+    const formattedLabels = labels;
+    formData.append('labels', formattedLabels);
+
+    fetch('/process_video/', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+    })
+      .then(response => response.blob()
+      )
+      .then(blob => {
+        console.log(document.querySelector('[name=csrfmiddlewaretoken]').values)
+        video.src = URL.createObjectURL(blob);
+        result.classList.remove('hidden');
+
+        const newDownloadButton = document.createElement('a');
+        newDownloadButton.textContent = 'Download Video';
+        newDownloadButton.download = 'processed_video.mp4';
+        newDownloadButton.href = video.src;
+        newDownloadButton.id = 'download-button';
+        result.classList.remove('hidden');
+        button.disabled = false;
+        button.classList.remove('processing');
+        result.appendChild(newDownloadButton);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  });
+
+</script>
+
+</html>
+
+</html>

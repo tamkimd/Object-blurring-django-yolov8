@@ -1,0 +1,5 @@
+django
+celery
+ultralytics
+gevent
+moviepy
