@@ -43,6 +43,7 @@ The following are required to run this project:
 ## Demo
 
  Video :  [face blur](face_blur.mp4)
+ ![](face_blur.gif)
 
 ## Reference
 * [YOLOv8](https://github.com/ultralytics/ultralytics)
