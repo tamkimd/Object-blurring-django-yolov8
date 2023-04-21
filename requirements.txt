@@ -1,4 +1,5 @@
 django
+djangorestframework
 celery
 ultralytics
 gevent
